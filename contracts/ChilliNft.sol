@@ -1,6 +1,6 @@
 //Contract based on [https://docs.openzeppelin.com/contracts/3.x/erc721](https://docs.openzeppelin.com/contracts/3.x/erc721)
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -24,10 +24,11 @@ contract ChilliNft is ERC721URIStorage, Ownable, ReentrancyGuard {
 
     struct TokenIds {
         uint256 count;
-        uint256[] tokenIds;
+        mapping(uint256 => uint256) tokenIdOfIndex;
+        mapping(uint256 => uint256) indexOfTokenId;
     }
 
-    mapping (address => TokenIds) internal _tokenIdsOfHolder;
+    mapping(address => TokenIds) internal _tokenIdsOfHolder;
 
     constructor() ERC721("ChilliNft", "CHL") {}
 
@@ -40,10 +41,12 @@ contract ChilliNft is ERC721URIStorage, Ownable, ReentrancyGuard {
         _burn(tokenId);
     }
 
-    function mint(
-        address recipient,
-        string memory tokenURI,
-    ) public onlyOwner nonReentrant returns (uint256) {
+    function mint(address recipient, string memory tokenURI)
+        public
+        onlyOwner
+        nonReentrant
+        returns (uint256)
+    {
         require(mintActive, "Minting is not allowed.");
         require(
             tokenSupply.current().add(1) <= MAX_CAP,
@@ -66,6 +69,40 @@ contract ChilliNft is ERC721URIStorage, Ownable, ReentrancyGuard {
         address from,
         address to,
         uint256 tokenId
-    )override internal virtual {}
+    ) internal virtual override {
+        if (from != address(0)) {
+            uint256 index = _tokenIdsOfHolder[from].indexOfTokenId[tokenId];
+            uint256 lastTokenId = _tokenIdsOfHolder[from].tokenIdOfIndex[
+                _tokenIdsOfHolder[from].count
+            ];
+            delete _tokenIdsOfHolder[from].indexOfTokenId[tokenId];
+            delete _tokenIdsOfHolder[from].tokenIdOfIndex[index];
+            delete _tokenIdsOfHolder[from].indexOfTokenId[lastTokenId];
+            delete _tokenIdsOfHolder[from].tokenIdOfIndex[
+                _tokenIdsOfHolder[from].count
+            ];
+            _tokenIdsOfHolder[from].indexOfTokenId[lastTokenId] = index;
+            _tokenIdsOfHolder[from].tokenIdOfIndex[index] = lastTokenId;
+            _tokenIdsOfHolder[from].count = _tokenIdsOfHolder[from].count.sub(
+                1
+            );
+        }
+        if (to != address(0)) {
+            _tokenIdsOfHolder[to].count = _tokenIdsOfHolder[to].count.add(1);
+            _tokenIdsOfHolder[to].tokenIdOfIndex[
+                _tokenIdsOfHolder[to].count
+            ] = tokenId;
+            _tokenIdsOfHolder[to].indexOfTokenId[tokenId] = _tokenIdsOfHolder[
+                to
+            ].count;
+        }
+    }
 
+    function getTokenId(address holder, uint256 index)
+        public
+        view
+        returns (uint256)
+    {
+        return _tokenIdsOfHolder[holder].tokenIdOfIndex[index];
+    }
 }

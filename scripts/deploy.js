@@ -1,8 +1,8 @@
 async function main() {
-    const RaceKingdom = await ethers.getContractFactory("RaceKingdom")
+    const ChilliNft = await ethers.getContractFactory("ChilliNft")
   
     // Start deployment, returning a promise that resolves to a contract object
-    const myContract = await RaceKingdom.deploy()
+    const myContract = await ChilliNft.deploy()
     await myContract.deployed()
     console.log("Contract deployed to address:", myContract.address)
   }
