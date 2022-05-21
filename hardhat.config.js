@@ -1,3 +1,23 @@
+require('dotenv').config();
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-etherscan");
+const {  API_URL_MUMBAI,  PRIVATE_KEY,  POLYGON_API_KEY} = process.env;
+module.exports = {
+   solidity: "0.8.1",
+   defaultNetwork: "matic",
+   networks: {
+      hardhat: {},
+      matic: {
+         url: API_URL_MUMBAI,
+         accounts: [`0x${PRIVATE_KEY}`]
+      }
+   },
+   etherscan: {
+      apiKey: POLYGON_API_KEY,
+   },
+}
+
+
 // /**
 // * @type import('hardhat/config').HardhatUserConfig
 // */
@@ -64,28 +84,33 @@
 /**
 * @type import('hardhat/config').HardhatUserConfig
 */
-require('dotenv').config();
-require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-etherscan");
-const { API_URL_ROPSTEN, API_URL_RINKEBY, PRIVATE_KEY, API_KEY } = process.env;
-module.exports = {
-   solidity: "0.8.1",
-   defaultNetwork: "ropsten",
-   networks: {
-      hardhat: {},
-      ropsten: {
-         url: API_URL_ROPSTEN,
-         accounts: [`0x${PRIVATE_KEY}`]
-      },
-      rinkeby: {
-         url: API_URL_RINKEBY,
-         accounts: [`0x${PRIVATE_KEY}`]
-      }
-   },
-   etherscan: {
-      apiKey: {
-         ropsten: API_KEY,
-         rinkeby: API_KEY,
-      }
-   },
-}
+// require('dotenv').config();
+// require("@nomiclabs/hardhat-ethers");
+// require("@nomiclabs/hardhat-etherscan");
+// const { API_URL_ROPSTEN, API_URL_RINKEBY, API_URL_MUMBAI,  PRIVATE_KEY, API_KEY, POLYGON_API_KEY} = process.env;
+// module.exports = {
+//    solidity: "0.8.1",
+//    defaultNetwork: "ropsten",
+//    networks: {
+//       hardhat: {},
+//       ropsten: {
+//          url: API_URL_ROPSTEN,
+//          accounts: [`0x${PRIVATE_KEY}`]
+//       },
+//       rinkeby: {
+//          url: API_URL_RINKEBY,
+//          accounts: [`0x${PRIVATE_KEY}`]
+//       },
+//       matic: {
+//          url: API_URL_MUMBAI,
+//          accounts: [`0x${PRIVATE_KEY}`]
+//       }
+//    },
+//    etherscan: {
+//       apiKey: {
+//          ropsten: API_KEY,
+//          rinkeby: API_KEY,
+//          matic: POLYGON_API_KEY,
+//       }
+//    },
+// }

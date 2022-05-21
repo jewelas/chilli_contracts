@@ -3,12 +3,14 @@
 pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
-contract ChilliSwapToken is Ownable , IERC20 {
+contract MChilliSwapToken is Ownable , IERC20 {
     using SafeMath for uint256;
+
+    address public childChainManager;
 
     mapping (address => uint256) private _balances;
 
@@ -22,91 +24,12 @@ contract ChilliSwapToken is Ownable , IERC20 {
     string private _symbol ;
     uint8 private _decimals;
 
-    uint256 public constant multiplier = (10**18);
-
-    uint256 public lastDevRelease;
-    uint256 public lastTeamRelease;
-
-    address team;
-    address dev;
-
-    uint256 public releaseStartDate;
-
-    uint256 totalDevMinted;
-    uint256 totalTeamMinted;
-
-    constructor (  
-        address _development,
-        address _team,
-        address _ido,
-        address _farming,
-        address _airdrops,
-        address _bounties,
-        address _treasary,
-        address _privateSale
-        ) {
+    constructor(address _childChainManager){
         _decimals = 18;
         _name = "ChilliSwap Token";
         _symbol = "CHLI";
-        _mint(_ido, 30_000_000 * multiplier);
-        _mint(_farming, 75_000_000 * multiplier);
-        _mint(_privateSale,45_000_000 * multiplier);
-        _mint(_airdrops, 7_500_000 * multiplier);
-        _mint(_bounties, 7_500_000 * multiplier);
-        _mint(_treasary, 60_000_000 * multiplier);
-
-        team = _team;
-        dev = _development;
-
-        releaseStartDate = 1635602850;
-    }
-
-    function devRelease() public {
-        if (lastDevRelease == 0) {
-            require(
-                releaseStartDate <= block.timestamp,
-                "token: release not started"
-            );
-            _mint(dev, 5_625_000 * multiplier);
-            lastDevRelease = releaseStartDate;
-            totalDevMinted += 5_625_000;
-        } else {
-            require(
-                totalDevMinted <= 75_000_001 * multiplier,
-                "token: let the quarter over"
-            );
-            require(
-                block.timestamp >= lastDevRelease + 7776000,
-                "token: let the quarter over"
-            );
-            _mint(dev, 5_625_000 * multiplier);
-            lastDevRelease = lastDevRelease + 7776000;
-            totalDevMinted += 5_625_000;
-        }
-    }
-
-    function teamRelease() public {
-        if (lastTeamRelease == 0) {
-            require(
-                releaseStartDate <= block.timestamp,
-                "token: release not started"
-            );
-            _mint(dev, 3_750_000 * multiplier);
-            lastTeamRelease = releaseStartDate;
-            totalTeamMinted += 3_750_000;
-        } else {
-            require(
-                totalTeamMinted <= 30_000_001 * multiplier,
-                "token: let the quarter over"
-            );
-            require(
-                block.timestamp >= lastTeamRelease + 7776000,
-                "token: let the quarter over"
-            );
-            _mint(team, 3_750_000 * multiplier);
-            lastTeamRelease = lastTeamRelease + 7776000;
-            totalTeamMinted += 3_750_000;
-        }
+        childChainManager = _childChainManager;
+        _mint(childChainManager, 60_000_000 * 10 ** 18);
     }
 
     /**
@@ -152,6 +75,14 @@ contract ChilliSwapToken is Ownable , IERC20 {
      */
     function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
+    }
+
+    /**
+     * @notice Function to set/update chaildChainManager address incase it changes. Can only be called by owner.
+     * @param _childChainManager Address of the chaild chain manager contract
+     */
+    function setChildChainManager(address _childChainManager) public onlyOwner {
+        childChainManager = _childChainManager;
     }
 
     /**
@@ -317,5 +248,32 @@ contract ChilliSwapToken is Ownable , IERC20 {
     modifier isUserwhiteListed(){
         require(!whiteList[msg.sender],"you are not whitelisted");
         _;
+    }
+
+    // Matic POS Bridge functions
+    /**
+     * @notice called when token is deposited on root chain
+     * @dev Should be callable only by ChildChainManager
+     * Should handle deposit by minting the required amount for user
+     * Make sure minting is done only by this function
+     * @param user user address for whom deposit is being done
+     * @param depositData abi encoded amount
+     */
+    function deposit(address user, bytes calldata depositData) external {
+        require(
+            _msgSender() == childChainManager,
+            "Only ChildChainManager can deposit"
+        );
+        uint256 amount = abi.decode(depositData, (uint256));
+        _mint(user, amount);
+    }
+
+    /**
+     * @notice called when user wants to withdraw tokens back to root chain
+     * @dev Should burn user's tokens. This transaction will be verified when exiting on root chain
+     * @param amount amount of tokens to withdraw
+     */
+    function withdraw(uint256 amount) external {
+        _burn(_msgSender(), amount);
     }
 }
