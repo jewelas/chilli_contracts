@@ -99,7 +99,7 @@ contract ChilliNft is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
 
     function getTokenId(address holder, uint256 index)
-        public
+        external
         view
         returns (uint256)
     {
